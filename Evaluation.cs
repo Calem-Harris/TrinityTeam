@@ -17,7 +17,7 @@ public static class Evaluation
     }
 
     public static bool hasPerformedAction = false;
-    static public void AttemptToPerformHeroAbility(Ability ability, Hero target)
+    static public void AttemptToPerformHeroAbility(Ability ability, Hero? target = null)
     {
         if (!hasPerformedAction)
         {

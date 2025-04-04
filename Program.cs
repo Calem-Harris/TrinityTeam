@@ -579,30 +579,28 @@ namespace PlayerCoder
 
                 if (!isSilenced)
                 {
-                    // getting live enemies count
-                    int liveEnemies = 0;
-                    foreach (Hero h in TeamHeroCoder.BattleState.foeHeroes)
+                    List<Hero> standingFoes = new List<Hero>();
+
+                    foreach (Hero foe in TeamHeroCoder.BattleState.foeHeroes)
                     {
-                        if (h.health > 0)
+                        if (foe.health > 0)
                         {
-                            target = h;
-                            liveEnemies++;
+                            standingFoes.Add(foe);
                         }
                     }
 
-                    // check cast meteor or fireball
-                    if (liveEnemies > 1)
+                    // Use Meteor if 2 or more foes are still standing
+                    if (standingFoes.Count >= 2 && activeHero.mana >= METEOR_COST)
                     {
-                        if (activeHero.mana >= METEOR_COST)
-                        {
-                            Console.WriteLine("Casting Meteor");
-                            Evaluation.AttemptToPerformHeroAbility(Ability.Meteor, null);
-                        }
-                        else if (activeHero.mana >= FIREBALL_COST)
-                        {
-                            Console.WriteLine("Casting Fireball");
-                            Evaluation.AttemptToPerformHeroAbility(Ability.Fireball, null);
-                        }
+                        Console.WriteLine("CHECK: More than 2 foes standing, using Meteor!");
+                        //hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Meteor, standingFoes[0]);
+                        Evaluation.AttemptToPerformHeroAbility(Ability.Meteor);
+                        return;
+                    }
+                    else if (standingFoes.Count >= 2 && activeHero.mana >= FIREBALL_COST)
+                    {
+                        Console.WriteLine("Casting Fireball");
+                        Evaluation.AttemptToPerformHeroAbility(Ability.Fireball);
                     }
                 }
                 //LOWEST PRIORITY SITS HERE
