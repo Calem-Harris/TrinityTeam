@@ -27,6 +27,27 @@ namespace PlayerCoder
         const int FIREBALL_COST = 25;
         const int DOOM_COST = 15;
         const int FLAME_STRIKE_COST = 30;
+        const int SLOW_COST = 15;
+
+        static List<StatusEffect> positiveEffects = new List<StatusEffect>()
+                {
+                    StatusEffect.AutoLife,
+                    StatusEffect.Faith,
+                    StatusEffect.Haste,
+                    StatusEffect.Brave
+                };
+
+        static List<StatusEffect> negativeEffects = new List<StatusEffect>()
+                {
+                    StatusEffect.Poison,
+                    StatusEffect.Petrifying,
+                    StatusEffect.Petrified,
+                    StatusEffect.Doom,
+                    StatusEffect.Slow,
+                    StatusEffect.Defaith,
+                    StatusEffect.Debrave,
+                    StatusEffect.Silence
+                };
 
 
 
@@ -319,11 +340,17 @@ namespace PlayerCoder
                 Console.WriteLine("CHECK: QUICK DISPEL");
                 foreach (Hero hero in TeamHeroCoder.BattleState.foeHeroes)
                 {
-                    if (hero.statusEffectsAndDurations.Count > 1)
+                    if (hero.health <= 0) continue;
+
+                    foreach (StatusEffectAndDuration se in hero.statusEffectsAndDurations)
                     {
-                        TeamHeroCoder.PerformHeroAbility(Ability.QuickDispel, target);
-                        return;
+                        if (positiveEffects.Contains(se.statusEffect) && activeHero.mana >= QUICK_DISPEL_COST)
+                        {
+                            TeamHeroCoder.PerformHeroAbility(Ability.QuickDispel, hero);
+                            return;
+                        }
                     }
+
                 }
 
                 Console.WriteLine("CHECK: Enemy Buffs to see if we should dispell");
@@ -358,7 +385,7 @@ namespace PlayerCoder
                     }
 
 
-                    if (!hasBuff)
+                    if (hasBuff)
                     {
                         Console.WriteLine("Enemy does not have any buffs");
                         if (shouldDispel)
@@ -378,76 +405,128 @@ namespace PlayerCoder
                 bool foeSilenceRemedy = false;
                 bool foePetrifyRemedy = false;
                 bool foeFullRemedy = false;
+                int numFoePoisonRem = 0;
+                int numFoeSilenceRem = 0;
+                int numFoePetrifyRem = 0;
+                int numFoeFullRem = 0;
+
+                Dictionary<Item, int> enemyItemCount = new Dictionary<Item, int>();
+
 
                 foreach (InventoryItem item in TeamHeroCoder.BattleState.foeInventory)
                 {
+                    if (enemyItemCount.ContainsKey(item.item))
+                    {
+                        enemyItemCount[item.item]++;
+                    } else
+                    {
+                        enemyItemCount.Add(item.item, 1);
+                    }
+
                     if (item.item == Item.PoisonRemedy)
                     {
                         Console.WriteLine("they have poison remedies");
                         foePoisonRemedy = true;
+                        numFoePoisonRem++;
                     }
                     else if (item.item == Item.SilenceRemedy)
                     {
                         Console.WriteLine("they have silence remedies");
                         foeSilenceRemedy = true;
+                        numFoeSilenceRem++;
                     }
                     else if (item.item == Item.PetrifyRemedy)
                     {
                         Console.WriteLine("they have petrify remedies");
                         foePetrifyRemedy = true;
+                        numFoePetrifyRem++;
                     }
                     else if (item.item == Item.FullRemedy)
                     {
                         Console.WriteLine("they have full remedies");
                         foeFullRemedy = true;
+                        numFoeFullRem++;
                     }
 
                 }
 
+                bool hasHierophant = false;
+                bool hasArcanist = false;
 
-                //Cast poison nova if foe does not have poison condition
-
-                if (activeHero.mana >= POISON_NOVA_COST)
+                foreach (Hero hero in TeamHeroCoder.BattleState.foeHeroes)
                 {
-                    Console.WriteLine("Wizard's total MP is greater than the cost of Poison Nova!");
-                    foreach (Hero h in TeamHeroCoder.BattleState.foeHeroes)
+                    if (hero.health <= 0) continue;
+
+                    if (hero.perks.Contains(Perk.ClericMastery))
                     {
-                        foreach (StatusEffectAndDuration se in h.statusEffectsAndDurations)
+                        hasHierophant = true;
+                        break;
+                    }
+                    if (hero.perks.Contains(Perk.AlchemistArcanist)) {
+                        hasArcanist = true;
+                    }
+                }
+
+                foreach (Hero hero in TeamHeroCoder.BattleState.foeHeroes)
+                {
+                    //Cast doom if foes does not have doom condition
+                    if (foeFullRemedy == false ||
+                        numFoeFullRem < 5)
+                    {
+                        if (!hasHierophant && 
+                            !hasArcanist)
                         {
-                            if (se.statusEffect != StatusEffect.Poison)
+                            Console.WriteLine("they don't have full remedies casting doom");
+                            if (activeHero.mana >= DOOM_COST)
+                            {
+                                target = hero;
+                                TeamHeroCoder.PerformHeroAbility(Ability.Doom, target);
+                                return;
+                            }
+                        }
+                    }
+
+                    bool isPoisoned = false;
+                    bool isSlowed = false;
+                    //Cast poison nova if foe does not have poison condition
+                    if (activeHero.mana >= POISON_NOVA_COST && activeHero.mana >= SLOW_COST)
+                    {
+                        Console.WriteLine("Wizard's total MP is greater than the cost of Poison Nova!");
+                        foreach (StatusEffectAndDuration se in hero.statusEffectsAndDurations)
+                        {
+                            if (se.statusEffect == StatusEffect.Poison)
                             {
                                 Console.WriteLine("Target is not Poisoned. Casting Poison Nova");
-                                Evaluation.AttemptToPerformHeroAbility(Ability.PoisonNova, h);
+                                //Evaluation.AttemptToPerformHeroAbility(Ability.PoisonNova, hero);
+                                isPoisoned = true;
+                                target = hero;
                             }
+
+                            if (se.statusEffect == StatusEffect.Slow)
+                            {
+                                //We have found a character that is not slow, do something here...
+                                isSlowed = true;
+                                target = hero;
+                                //TeamHeroCoder.PerformHeroAbility(Ability.Slow, target);
+                                //return;
+                            }
+                        }
+
+                        if (!isPoisoned)
+                        {
+                            Evaluation.AttemptToPerformHeroAbility(Ability.PoisonNova, target);
+
+                        }
+                        if (!isSlowed)
+                        {
+                            TeamHeroCoder.PerformHeroAbility(Ability.Slow, target);
+                            return;
                         }
 
                     }
                 }
-                //Cast slow if foe does not have slow condition
-                foreach (StatusEffectAndDuration se in target.statusEffectsAndDurations)
-                {
-                    if (se.statusEffect != StatusEffect.Slow)
-                    {
-                        //We have found a character that is not slow, do something here...
-                        TeamHeroCoder.PerformHeroAbility(Ability.Slow, target);
-                        return;
-                    }
-                }
-                //Cast doom if foes does not have doom condition
-                if (foeFullRemedy == false)
-                {
-                    foreach (Hero hero in TeamHeroCoder.BattleState.foeHeroes)
-                    {
-                        if (target == null) target = hero;
-                    }
 
-                    Console.WriteLine("they don't have full remedies casting doom");
-                    if (activeHero.mana >= DOOM_COST)
-                    {
-                        TeamHeroCoder.PerformHeroAbility(Ability.Doom, target);
-                        return;
-                    }
-                }
+               
                 //Consider Flame Strike when a "priority enemy" is low HP
                 //Priority Targets
                 //Cleric with Healer Perk / Any Cleric
@@ -517,12 +596,12 @@ namespace PlayerCoder
                         if (activeHero.mana >= METEOR_COST)
                         {
                             Console.WriteLine("Casting Meteor");
-                            Evaluation.AttemptToPerformHeroAbility(Ability.Meteor, target);
+                            Evaluation.AttemptToPerformHeroAbility(Ability.Meteor, null);
                         }
                         else if (activeHero.mana >= FIREBALL_COST)
                         {
                             Console.WriteLine("Casting Fireball");
-                            Evaluation.AttemptToPerformHeroAbility(Ability.Fireball, target);
+                            Evaluation.AttemptToPerformHeroAbility(Ability.Fireball, null);
                         }
                     }
                 }
