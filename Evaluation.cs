@@ -15,4 +15,13 @@ public static class Evaluation
 
         return false;
     }
+
+    public static bool hasPerformedAction = false;
+    static public void AttemptToPerformHeroAbility(Ability ability, Hero? target = null)
+    {
+        if (!hasPerformedAction)
+        {
+            TeamHeroCoder.PerformHeroAbility(ability, target);
+        }
+    }
 }

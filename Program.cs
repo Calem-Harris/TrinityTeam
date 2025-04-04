@@ -21,47 +21,44 @@ namespace PlayerCoder
         const int RESURRECTION_COST = 25;
         const int QUICK_HIT_COST = 15;
         const int CURE_SERIOUS_COST = 20;
+        const int QUICK_DISPEL_COST = 10;
+        const int POISON_NOVA_COST = 15;
+        const int METEOR_COST = 60;
+        const int FIREBALL_COST = 25;
+        const int DOOM_COST = 15;
+        const int FLAME_STRIKE_COST = 30;
+        const int SLOW_COST = 15;
 
-        static bool hasAssignedMonkCharactersToVariables = false;
-        static Hero monk1 = null;
-        static Hero monk2 = null;
+        static List<StatusEffect> positiveEffects = new List<StatusEffect>()
+                {
+                    StatusEffect.AutoLife,
+                    StatusEffect.Faith,
+                    StatusEffect.Haste,
+                    StatusEffect.Brave
+                };
+
+        static List<StatusEffect> negativeEffects = new List<StatusEffect>()
+                {
+                    StatusEffect.Poison,
+                    StatusEffect.Petrifying,
+                    StatusEffect.Petrified,
+                    StatusEffect.Doom,
+                    StatusEffect.Slow,
+                    StatusEffect.Defaith,
+                    StatusEffect.Debrave,
+                    StatusEffect.Silence
+                };
+
 
 
         static public void ProcessAI()
         {
             bool hasPerformedAction = false;
-            //Evaluation.hasPerformedAction = false;
+            Evaluation.hasPerformedAction = false;
 
-            Hero secondMonk = TeamHeroCoder.BattleState.allyHeroes[2];
-
-            //Hero monk = TeamHeroCoder.BattleState.allyHeroes[2].jobClass;
-
-            if (secondMonk == TeamHeroCoder.BattleState.heroWithInitiative)
-            {
-                //Perform the specific logic for our second monk that we dont want the first monk to do
-            }
-
-            foreach (Hero ally in TeamHeroCoder.BattleState.allyHeroes)
-            {
-                if (ally.jobClass != HeroJobClass.Monk) continue;
-
-                if (!hasAssignedMonkCharactersToVariables)
-                {
-                    //Check / assign specific Monk varaibles here
-                    monk1 = ally;
-
-                    if (ally.initiativePercent > monk1.initiativePercent)
-                    {
-                        monk2 = ally;
-                    }
-
-                    hasAssignedMonkCharactersToVariables = true;
-                }
-            }
-            Console.WriteLine();
             Hero activeHero = null;
 
-            #region SampleCode
+            #region Fighter Logic
 
             if (TeamHeroCoder.BattleState.heroWithInitiative.jobClass == HeroJobClass.Fighter)
             {
@@ -87,8 +84,9 @@ namespace PlayerCoder
                             if (activeHero.mana >= RESURRECTION_COST)
                             {
                                 Console.WriteLine("We have the Mana for Ressurection. Casting it.");
-                                //Placeholder calling the function note for us
                                 hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Resurrection, ally);
+                                //TeamHeroCoder.PerformHeroAbility(Ability.Resurrection, ally);
+                                //return;
                             }
                         }
                     }
@@ -116,6 +114,8 @@ namespace PlayerCoder
                     {
                         Console.WriteLine("An ally is below 35% Mana. Using an Ether");
                         hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Resurrection, ally);
+                        //TeamHeroCoder.PerformHeroAbility(Ability.Resurrection, ally);
+                        //return;
                     }
                 }
 
@@ -160,7 +160,9 @@ namespace PlayerCoder
                     if (shouldCastBrave)
                     {
                         Console.WriteLine("We have determined that casting brave is a good idea.");
-                        hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Resurrection, activeHero);
+                        hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Brave, activeHero);
+                        //TeamHeroCoder.PerformHeroAbility(Ability.Brave, activeHero);
+                        //return;
                     }
                 }
 
@@ -188,7 +190,9 @@ namespace PlayerCoder
                         if (se.statusEffect == StatusEffect.Poison && haspoisonremedy)
                         {
                             Console.WriteLine("Using Poison Rem");
-                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Resurrection, ally);
+                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.PoisonRemedy, ally);
+                            //TeamHeroCoder.PerformHeroAbility(Ability.PoisonRemedy, ally);
+                            //return;
                         }
                     }
                 }
@@ -218,11 +222,15 @@ namespace PlayerCoder
                         {
                             Console.WriteLine("Cleric's initiavePercent <= 50 and there is an ally below 40% Health. Casting Cure Serious");
 
-                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Resurrection, cleric);
+                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.CureSerious, cleric);
+                            //TeamHeroCoder.PerformHeroAbility(Ability.CureSerious, cleric);
+                            //return;
                         }
                         else if (lowHP.Contains(hero))
                         {
-                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Resurrection, hero);
+                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.CureSerious, hero);
+                            //TeamHeroCoder.PerformHeroAbility(Ability.CureSerious, hero);
+                            //return;
                         }
                     }
                 }
@@ -243,7 +251,9 @@ namespace PlayerCoder
                             quickHitTarget = hero;
 
                         Console.WriteLine("We found a " + hero.jobClass + "in opposing team. Using Quick Hit");
-                        hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Resurrection, quickHitTarget);
+                        hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.QuickHit, quickHitTarget);
+                        //TeamHeroCoder.PerformHeroAbility(Ability.QuickHit, quickHitTarget);
+                        //return;
                     }
                 }
 
@@ -255,8 +265,9 @@ namespace PlayerCoder
                         if (h.jobClass == HeroJobClass.Alchemist || h.jobClass == HeroJobClass.Rogue)
                         {
                             Console.WriteLine("We found a " + h.jobClass + "in opposing team. Using Quick Hit");
-                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Resurrection, h);
-                            return;
+                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.QuickHit, h);
+                            //TeamHeroCoder.PerformHeroAbility(Ability.QuickHit, h);
+                            //return;
                         }
                     }
                 }
@@ -280,13 +291,19 @@ namespace PlayerCoder
 
                 //This is the line of code that tells Team Hero Coder that we want to perform the attack action and target the foe with the lowest HP
                 hasPerformedAction =  Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Attack, target);
+                //TeamHeroCoder.PerformHeroAbility(Ability.Attack, target);
+                //return;
                 //LOWEST PRIORITY CHECK GOES HERE
 
             }
+
+            #endregion
+
+            #region Cleric Logic
             else if (TeamHeroCoder.BattleState.heroWithInitiative.jobClass == HeroJobClass.Cleric)
             {
                 //The character with initiative is a cleric, do something here...
-
+                //AUTOLIFE IS IMPORTANT
                 Console.WriteLine("this is a cleric");
                 Hero target = null;
 
@@ -304,12 +321,292 @@ namespace PlayerCoder
                 //This is the line of code that tells Team Hero Coder that we want to perform the attack action and target the foe with the lowest HP
                 TeamHeroCoder.PerformHeroAbility(Ability.Attack, target);
             }
+
+            #endregion
+
+            #region Wizard Logic
             else if (TeamHeroCoder.BattleState.heroWithInitiative.jobClass == HeroJobClass.Wizard)
             {
                 //The character with initiative is a wizard, do something here...
-
                 Console.WriteLine("this is a wizard");
+
+                //This is the ONLY target variable we are going to use in this statement
                 Hero target = null;
+                activeHero = TeamHeroCoder.BattleState.heroWithInitiative;
+
+
+                //HIGHEST PRIORITY SITS HERE
+                //Quick Dispel if foe has positive status effects
+                Console.WriteLine("CHECK: QUICK DISPEL");
+                foreach (Hero hero in TeamHeroCoder.BattleState.foeHeroes)
+                {
+                    if (hero.health <= 0) continue;
+
+                    foreach (StatusEffectAndDuration se in hero.statusEffectsAndDurations)
+                    {
+                        if (positiveEffects.Contains(se.statusEffect) && activeHero.mana >= QUICK_DISPEL_COST)
+                        {
+                            TeamHeroCoder.PerformHeroAbility(Ability.QuickDispel, hero);
+                            return;
+                        }
+                    }
+
+                }
+
+                Console.WriteLine("CHECK: Enemy Buffs to see if we should dispell");
+                bool hasBuff = false;
+                bool shouldDispel = false;
+
+
+                foreach (Hero foe in TeamHeroCoder.BattleState.foeHeroes)
+                {
+                    foreach (StatusEffectAndDuration se in foe.statusEffectsAndDurations)
+                    {
+                        if (se.statusEffect == StatusEffect.Faith || 
+                            se.statusEffect == StatusEffect.AutoLife ||
+                            se.statusEffect == StatusEffect.Brave ||
+                            se.statusEffect == StatusEffect.Haste)
+                        {
+                            Console.WriteLine("Enemy has a positive status condition");
+                            hasBuff = true;
+                            target = foe;
+                            break;
+                        }
+
+                        hasBuff = false;
+                    }
+
+                    if (activeHero.mana >= QUICK_DISPEL_COST)
+                    {
+
+                        Console.WriteLine("We found buffs it is ok to dispel and have the mana");
+                        shouldDispel = true;
+
+                    }
+
+
+                    if (hasBuff)
+                    {
+                        Console.WriteLine("Enemy does not have any buffs");
+                        if (shouldDispel)
+                        {
+                            Console.WriteLine("We have determined that casting Quick Dispel is a good idea.");
+                            TeamHeroCoder.PerformHeroAbility(Ability.QuickDispel, target);
+                            return;
+                        }
+                    }
+                }
+
+                //Check to see what status effects they DO have vs what remedies they have
+
+                Console.WriteLine("CHECK: SEEING ENEMY STATUS EFFECTS VS REMEMDIES");
+
+                bool foePoisonRemedy = false;
+                bool foeSilenceRemedy = false;
+                bool foePetrifyRemedy = false;
+                bool foeFullRemedy = false;
+                int numFoePoisonRem = 0;
+                int numFoeSilenceRem = 0;
+                int numFoePetrifyRem = 0;
+                int numFoeFullRem = 0;
+
+                Dictionary<Item, int> enemyItemCount = new Dictionary<Item, int>();
+
+
+                foreach (InventoryItem item in TeamHeroCoder.BattleState.foeInventory)
+                {
+                    if (enemyItemCount.ContainsKey(item.item))
+                    {
+                        enemyItemCount[item.item]++;
+                    } else
+                    {
+                        enemyItemCount.Add(item.item, 1);
+                    }
+
+                    if (item.item == Item.PoisonRemedy)
+                    {
+                        Console.WriteLine("they have poison remedies");
+                        foePoisonRemedy = true;
+                        numFoePoisonRem++;
+                    }
+                    else if (item.item == Item.SilenceRemedy)
+                    {
+                        Console.WriteLine("they have silence remedies");
+                        foeSilenceRemedy = true;
+                        numFoeSilenceRem++;
+                    }
+                    else if (item.item == Item.PetrifyRemedy)
+                    {
+                        Console.WriteLine("they have petrify remedies");
+                        foePetrifyRemedy = true;
+                        numFoePetrifyRem++;
+                    }
+                    else if (item.item == Item.FullRemedy)
+                    {
+                        Console.WriteLine("they have full remedies");
+                        foeFullRemedy = true;
+                        numFoeFullRem++;
+                    }
+
+                }
+
+                bool hasHierophant = false;
+                bool hasArcanist = false;
+
+                foreach (Hero hero in TeamHeroCoder.BattleState.foeHeroes)
+                {
+                    if (hero.health <= 0) continue;
+
+                    if (hero.perks.Contains(Perk.ClericMastery))
+                    {
+                        hasHierophant = true;
+                        break;
+                    }
+                    if (hero.perks.Contains(Perk.AlchemistArcanist)) {
+                        hasArcanist = true;
+                    }
+                }
+
+                foreach (Hero hero in TeamHeroCoder.BattleState.foeHeroes)
+                {
+                    //Cast doom if foes does not have doom condition
+                    if (foeFullRemedy == false ||
+                        numFoeFullRem < 5)
+                    {
+                        if (!hasHierophant && 
+                            !hasArcanist)
+                        {
+                            Console.WriteLine("they don't have full remedies casting doom");
+                            if (activeHero.mana >= DOOM_COST)
+                            {
+                                target = hero;
+                                TeamHeroCoder.PerformHeroAbility(Ability.Doom, target);
+                                return;
+                            }
+                        }
+                    }
+
+                    bool isPoisoned = false;
+                    bool isSlowed = false;
+                    //Cast poison nova if foe does not have poison condition
+                    if (activeHero.mana >= POISON_NOVA_COST && activeHero.mana >= SLOW_COST)
+                    {
+                        Console.WriteLine("Wizard's total MP is greater than the cost of Poison Nova!");
+                        foreach (StatusEffectAndDuration se in hero.statusEffectsAndDurations)
+                        {
+                            if (se.statusEffect == StatusEffect.Poison)
+                            {
+                                Console.WriteLine("Target is not Poisoned. Casting Poison Nova");
+                                //Evaluation.AttemptToPerformHeroAbility(Ability.PoisonNova, hero);
+                                isPoisoned = true;
+                                target = hero;
+                            }
+
+                            if (se.statusEffect == StatusEffect.Slow)
+                            {
+                                //We have found a character that is not slow, do something here...
+                                isSlowed = true;
+                                target = hero;
+                                //TeamHeroCoder.PerformHeroAbility(Ability.Slow, target);
+                                //return;
+                            }
+                        }
+
+                        if (!isPoisoned)
+                        {
+                            Evaluation.AttemptToPerformHeroAbility(Ability.PoisonNova, target);
+
+                        }
+                        if (!isSlowed)
+                        {
+                            TeamHeroCoder.PerformHeroAbility(Ability.Slow, target);
+                            return;
+                        }
+
+                    }
+                }
+
+               
+                //Consider Flame Strike when a "priority enemy" is low HP
+                //Priority Targets
+                //Cleric with Healer Perk / Any Cleric
+                //Alchemist (Any)
+                //TODO: Consider how to prioritize targets within our list of priority targets
+                List<Hero> priorityTargets = new List<Hero>();
+                Console.WriteLine("Gathering Priority Targets for Flame Strike");
+                foreach (Hero enemy in TeamHeroCoder.BattleState.foeHeroes)
+                {
+                    if (enemy.health <= 0) continue;
+                
+                    if (enemy.perks.Contains(Perk.ClericHealer) ||
+                        enemy.jobClass == HeroJobClass.Alchemist)
+                    {
+                        Console.WriteLine("Added a " + enemy.jobClass);
+                        priorityTargets.Add(enemy);
+                    }
+                    //continue; -> Go look at the next enemy
+                    //break; -> Exits the loop and continues executing code
+                    //return; -> Exit the loop and "finish" the character's turn
+                }
+
+                float flameStrikeDamage = activeHero.special * 15;
+
+                foreach (Hero possibleTarget in priorityTargets)
+                {
+                    if (possibleTarget.health <= flameStrikeDamage - possibleTarget.specialDefense * flameStrikeDamage)
+                    {
+                        Console.WriteLine("Found a priority target we can one-shot");
+                        if (activeHero.mana <= FLAME_STRIKE_COST)
+                        {
+                            Console.WriteLine("We have the mana to Flame Strike");
+                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.FlameStrike, target);
+                        }
+                    }
+                }
+
+                //Cast meteor if the number of standing foes > 1
+                //  Cast fireball instead if we don't have enough mana for meteor
+
+                bool isSilenced = false;
+                foreach (StatusEffectAndDuration s in activeHero.statusEffectsAndDurations)
+                {
+                    if (s.statusEffect == StatusEffect.Silence)
+                    {
+                        isSilenced = true;
+                        break;
+                    }
+                }
+
+                if (!isSilenced)
+                {
+                    List<Hero> standingFoes = new List<Hero>();
+
+                    foreach (Hero foe in TeamHeroCoder.BattleState.foeHeroes)
+                    {
+                        if (foe.health > 0)
+                        {
+                            standingFoes.Add(foe);
+                        }
+                    }
+
+                    // Use Meteor if 2 or more foes are still standing
+                    if (standingFoes.Count >= 2 && activeHero.mana >= METEOR_COST)
+                    {
+                        Console.WriteLine("CHECK: More than 2 foes standing, using Meteor!");
+                        //hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Meteor, standingFoes[0]);
+                        Evaluation.AttemptToPerformHeroAbility(Ability.Meteor);
+                        return;
+                    }
+                    else if (standingFoes.Count >= 2 && activeHero.mana >= FIREBALL_COST)
+                    {
+                        Console.WriteLine("Casting Fireball");
+                        Evaluation.AttemptToPerformHeroAbility(Ability.Fireball);
+                    }
+                }
+                //LOWEST PRIORITY SITS HERE
+
+
+                //Attack foe with lowest Health
 
                 foreach (Hero hero in TeamHeroCoder.BattleState.foeHeroes)
                 {
@@ -323,8 +620,9 @@ namespace PlayerCoder
                 }
 
                 //This is the line of code that tells Team Hero Coder that we want to perform the attack action and target the foe with the lowest HP
-                TeamHeroCoder.PerformHeroAbility(Ability.Attack, target);
+                hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Attack, target);
             }
+            #endregion
 
 
             foreach (InventoryItem ii in TeamHeroCoder.BattleState.allyInventory)
@@ -364,8 +662,6 @@ namespace PlayerCoder
                     }
                 }
             }
-
-            #endregion
 
         }
     }
