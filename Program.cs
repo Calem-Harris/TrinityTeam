@@ -28,6 +28,12 @@ namespace PlayerCoder
         const int DOOM_COST = 15;
         const int FLAME_STRIKE_COST = 30;
         const int SLOW_COST = 15;
+        const int HASTE_COST = 15;
+        const int MASS_HEAL_COST = 20;
+        const int QUICK_CLEANSE_COST = 10;
+        const int AUTO_LIFE_COST = 25;
+        const int BRAVE_COST = 15;
+
 
         static List<StatusEffect> positiveEffects = new List<StatusEffect>()
                 {
@@ -306,6 +312,228 @@ namespace PlayerCoder
                 //AUTOLIFE IS IMPORTANT
                 Console.WriteLine("this is a cleric");
                 Hero target = null;
+                activeHero = TeamHeroCoder.BattleState.heroWithInitiative;
+
+                //THE HIGHEST PRIORITY ITEM GOES HERE
+                //What do we want the Cleric to do?
+
+                //Cast Haste on ___ if they do not have it
+                //Prioritize Cleric
+                bool hashaste = false;
+                foreach (Hero ally in TeamHeroCoder.BattleState.allyHeroes)
+                {
+
+                    foreach (StatusEffectAndDuration se in ally.statusEffectsAndDurations)
+                    {
+                        if (se.statusEffect != StatusEffect.Haste)
+                        {
+                            if (activeHero.mana >= HASTE_COST)
+                            {
+                                target = ally;
+
+                                if (se.statusEffect != StatusEffect.Haste)
+
+                                    if (ally.jobClass == HeroJobClass.Cleric)
+                                    {
+                                        TeamHeroCoder.PerformHeroAbility(Ability.Haste, target);
+                                        hashaste = true;
+                                        hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Haste, ally);
+                                    }
+
+
+                                if (ally.jobClass == HeroJobClass.Fighter || ally.jobClass == HeroJobClass.Wizard)
+                                {
+                                    TeamHeroCoder.PerformHeroAbility(Ability.Haste, target);
+                                    hashaste = true;
+                                    hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Haste, ally);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                //Cast resurrection on an ally if they are dead
+                bool isSilenced = false;
+                foreach (StatusEffectAndDuration s in activeHero.statusEffectsAndDurations)
+                {
+                    if (s.statusEffect == StatusEffect.Silence)
+                    {
+                        isSilenced = true;
+                        break;
+                    }
+                }
+
+                if (!isSilenced && activeHero.mana >= RESURRECTION_COST)
+                {
+                    foreach (Hero h in TeamHeroCoder.BattleState.allyHeroes)
+                    {
+                        if (h.health <= 0)
+                        {
+                            Console.WriteLine("resurrecting ally");
+                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Resurrection, h);
+                            return;
+                        }
+                    }
+                }
+
+                //Mass Heal if there are multiple allies that have taken damage
+                //  Think About: Mass heal if the highest HP ally is below a certain percent
+
+                //Cure Serious if ONE ally has < 30% Health
+                Console.WriteLine("Does anyone need healing?");
+                List<Hero> hurt = new List<Hero>();
+                List<Hero> lowHP = new List<Hero>();
+                foreach (Hero hero in TeamHeroCoder.BattleState.allyHeroes)
+                {
+                    if ((float)hero.health / (float)hero.maxHealth <= 0.80)
+                    {
+                        hurt.Add(hero);
+                    }
+                    if ((float)hero.health / (float)hero.maxHealth <= 0.50)
+                    {
+                        lowHP.Add(hero);
+                    }
+                }
+                foreach (Hero hero in TeamHeroCoder.BattleState.allyHeroes)
+                {
+                    if (hurt.Count >= 2 && hero.health <= 80 && hero.health > 0 && !isSilenced && activeHero.mana >= MASS_HEAL_COST)
+                    {
+                        Console.WriteLine("We have found Two party members who are low in health and need some healing. MASS HEAL");
+                        hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.MassHeal, hero);
+                    }
+                    else if (lowHP.Count == 1 && hero.health <= 50 && hero.health > 0 && !isSilenced && activeHero.mana >= CURE_SERIOUS_COST)
+                    {
+                        Console.WriteLine("We have found only one party member who are low in health and need some healing. CURE SERIOUS");
+                        hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.CureSerious, hero);
+                    }
+                }
+                //Quick Cleanse if an ally has negative status effects
+
+
+                Console.WriteLine("CHECK: Ally Debuffs to see if we should cleanse");
+                bool hasDebuff = false;
+                bool shouldCleanse = false;
+                //bool isSilenced = false;
+
+                foreach (StatusEffectAndDuration s in activeHero.statusEffectsAndDurations)
+                {
+                    if (s.statusEffect == StatusEffect.Silence)
+                    {
+                        Console.WriteLine("The Cleric is silenced");
+                        isSilenced = true;
+                        break;
+                    }
+                }
+                if (!isSilenced)
+                {
+                    foreach (Hero ally in TeamHeroCoder.BattleState.allyHeroes)
+                    {
+                        foreach (StatusEffectAndDuration se in ally.statusEffectsAndDurations)
+                        {
+                            if (se.statusEffect == StatusEffect.Poison ||
+                                se.statusEffect == StatusEffect.Doom ||
+                                se.statusEffect == StatusEffect.Petrifying ||
+                                se.statusEffect == StatusEffect.Defaith ||
+                                se.statusEffect == StatusEffect.Debrave ||
+                                se.statusEffect == StatusEffect.Slow ||
+                                se.statusEffect == StatusEffect.Silence)
+                            {
+                                Console.WriteLine("An Ally has a negative status condition");
+                                hasDebuff = true;
+                                target = ally;
+                                break;
+                            }
+
+                            hasDebuff = false;
+                        }
+
+                        if (activeHero.mana >= QUICK_CLEANSE_COST)
+                        {
+                            Console.WriteLine("We found Debuffs it is ok to dispel");
+                            shouldCleanse = true;
+                        }
+                        if (hasDebuff)
+                        {
+                            Console.WriteLine("An ally is effected by a status");
+                            if (shouldCleanse)
+                            {
+                                Console.WriteLine("We have determined that casting Quick Cleanse is a good idea.");
+                                TeamHeroCoder.PerformHeroAbility(Ability.QuickDispel, target);
+                                return;
+                            }
+                        }
+                    }
+                }
+                //Cast AutoLife if no one needs healing and/or reviving
+                //  Think about adding a "catch" statement to cast AutoLife if we have no other spell to cast
+                Console.WriteLine("No Healing or Revive needed. AUTO LIFE EVERYTHING!");
+                foreach (Hero ally in TeamHeroCoder.BattleState.allyHeroes)
+                {
+                    bool hasAutoLife = false;
+
+                    foreach (StatusEffectAndDuration se in ally.statusEffectsAndDurations)
+                    {
+                        if (se.statusEffect == StatusEffect.AutoLife)
+                        {
+                            Console.WriteLine("We found an ally with Auto Life, skipping this hero");
+                            hasAutoLife = true;
+                            break;
+                        }
+                    }
+
+                    if (!hasAutoLife)
+                    {
+                        if (activeHero.mana >= AUTO_LIFE_COST && !isSilenced)
+                        {
+                            Console.WriteLine("We have the Mana for Auto Life!");
+                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.AutoLife, ally);
+                            hasAutoLife = true;
+                        }
+                    }
+                }
+
+                //Cast Faith on the Wizard if the Wizard does not have it
+                //  CHECK: See if Faith is worth casting on the Cleric as well
+                foreach (Hero ally in TeamHeroCoder.BattleState.allyHeroes)
+                {
+                    if (ally.jobClass == HeroJobClass.Wizard)
+                    {
+                        bool hasFaith = false;
+
+                        foreach (StatusEffectAndDuration se in ally.statusEffectsAndDurations)
+                        {
+                            if (se.statusEffect == StatusEffect.Faith)
+                            {
+                                hasFaith = true; 
+                                break;
+                            }
+                        }
+
+                        if (!hasPerformedAction && !hasFaith)
+                        {
+                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Faith, ally);
+                            TeamHeroCoder.PerformHeroAbility(Ability.Faith, ally);
+                            return;
+                        }
+                    }
+                }
+
+                //Cast Brave on Fighter if they do not have it
+          
+
+                if (!isSilenced && activeHero.mana >= BRAVE_COST)
+                {
+                    foreach (Hero h in TeamHeroCoder.BattleState.allyHeroes)
+                    {
+                        if (h.jobClass == HeroJobClass.Fighter && !HasStatus(h, StatusEffect.Brave))
+                        {
+                            Console.WriteLine("Casting Brave on fighter");
+                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Brave, h);
+                            return;
+                        }
+                    }
+                }
+                //LOWEST PRIORITY ITEM GOES HERE
 
                 foreach (Hero hero in TeamHeroCoder.BattleState.foeHeroes)
                 {
@@ -663,6 +891,16 @@ namespace PlayerCoder
                 }
             }
 
+        }
+
+        static public bool HasStatus(Hero h, StatusEffect effect)
+        {
+            foreach (StatusEffectAndDuration s in h.statusEffectsAndDurations)
+            {
+                if (s.statusEffect == effect) return true;
+            }
+
+            return false;
         }
     }
 }
