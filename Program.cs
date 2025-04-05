@@ -321,7 +321,7 @@ namespace PlayerCoder
                 //Prioritize Cleric
                 foreach (Hero ally in TeamHeroCoder.BattleState.allyHeroes)
                 {
-                    bool hashaste = false;
+                    bool hasHaste = false;
 
                     Console.WriteLine("We are looking at the " + ally.jobClass);
 
@@ -331,7 +331,7 @@ namespace PlayerCoder
 
                         if (se.statusEffect == StatusEffect.Haste)
                         {
-                            hashaste = true;
+                            hasHaste = true;
                             break;
                         }
                     }
@@ -344,7 +344,7 @@ namespace PlayerCoder
                         target = ally;
 
                         //if (se.statusEffect != StatusEffect.Haste)
-                        if (ally.jobClass == HeroJobClass.Cleric)
+                        if (!hasHaste && ally.jobClass == HeroJobClass.Cleric)
                         {
                             Console.WriteLine("We have found our cleric");
                             TeamHeroCoder.PerformHeroAbility(Ability.Haste, target);
@@ -354,7 +354,7 @@ namespace PlayerCoder
                         }
 
 
-                        if (ally.jobClass == HeroJobClass.Fighter || ally.jobClass == HeroJobClass.Wizard)
+                        if (!hasHaste && ally.jobClass == HeroJobClass.Fighter || ally.jobClass == HeroJobClass.Wizard)
                         {
                             Console.WriteLine("We have found our " + ally.jobClass);
                             Console.WriteLine("Performing Ability on " + ally.jobClass);
