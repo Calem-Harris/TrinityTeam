@@ -319,35 +319,47 @@ namespace PlayerCoder
 
                 //Cast Haste on ___ if they do not have it
                 //Prioritize Cleric
-                bool hashaste = false;
                 foreach (Hero ally in TeamHeroCoder.BattleState.allyHeroes)
                 {
+                    bool hashaste = false;
+
+                    Console.WriteLine("We are looking at the " + ally.jobClass);
 
                     foreach (StatusEffectAndDuration se in ally.statusEffectsAndDurations)
                     {
-                        if (se.statusEffect != StatusEffect.Haste)
+                        Console.WriteLine("Looking at Status Effects");
+
+                        if (se.statusEffect == StatusEffect.Haste)
                         {
-                            if (activeHero.mana >= HASTE_COST)
-                            {
-                                target = ally;
+                            hashaste = true;
+                            break;
+                        }
+                    }
 
-                                if (se.statusEffect != StatusEffect.Haste)
+                    Console.WriteLine("Ally does not have haste");
+                    if (activeHero.mana >= HASTE_COST)
+                    {
+                        Console.WriteLine("We have the mana to cast haste");
 
-                                    if (ally.jobClass == HeroJobClass.Cleric)
-                                    {
-                                        TeamHeroCoder.PerformHeroAbility(Ability.Haste, target);
-                                        hashaste = true;
-                                        hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Haste, ally);
-                                    }
+                        target = ally;
+
+                        //if (se.statusEffect != StatusEffect.Haste)
+                        if (ally.jobClass == HeroJobClass.Cleric)
+                        {
+                            Console.WriteLine("We have found our cleric");
+                            TeamHeroCoder.PerformHeroAbility(Ability.Haste, target);
+                            Console.WriteLine("Performing Ability on " + target.jobClass);
+                            return;
+                            //hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Haste, ally);
+                        }
 
 
-                                if (ally.jobClass == HeroJobClass.Fighter || ally.jobClass == HeroJobClass.Wizard)
-                                {
-                                    TeamHeroCoder.PerformHeroAbility(Ability.Haste, target);
-                                    hashaste = true;
-                                    hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Haste, ally);
-                                }
-                            }
+                        if (ally.jobClass == HeroJobClass.Fighter || ally.jobClass == HeroJobClass.Wizard)
+                        {
+                            Console.WriteLine("We have found our " + ally.jobClass);
+                            Console.WriteLine("Performing Ability on " + ally.jobClass);
+                            TeamHeroCoder.PerformHeroAbility(Ability.Haste, target);
+                            hasPerformedAction = Evaluation.AttemptToPerformAction(hasPerformedAction, Ability.Haste, ally);
                         }
                     }
                 }
